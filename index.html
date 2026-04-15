@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopee Fashion 内部选品系统</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #EE4D2D;
+            --primary-light: #fff5f2;
+            --primary-dark: #d73211;
+            --accent: #F4A855;
+            --accent2: #7C6BED;
+            --bg: #faf8f9;
+            --card-bg: #ffffff;
+            --text: #2d2038;
+            --text-muted: #9b8fa0;
+            --border: #f0e8ed;
+            --success: #27ae60;
+            --success-bg: #eafaf1;
+            --info: #2980b9;
+            --info-bg: #eaf4fb;
+            --tag-bg: #fff3f7;
+            --danger: #eb4d4b;
+            --danger-bg: #fff1f0;
+            --shadow: 0 2px 16px rgba(238,77,45,0.07);
+            --shadow-hover: 0 8px 32px rgba(238,77,45,0.16);
+            --radius: 16px;
+            --radius-sm: 8px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', 'PingFang SC', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ── ACCESS GATE STYLES ── */
+        #accessGate {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #FF6633 0%, #EE4D2D 50%, #D02D11 100%);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .gate-box {
+            background: #fff;
+            border-radius: 20px;
+            padding: 40px 48px;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.25);
+            text-align: center;
+        }
+        .gate-logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px;
+            color: var(--primary);
+            margin-bottom: 6px;
+            letter-spacing: 0.3px;
+        }
+        .gate-sub {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 28px;
+        }
+        .gate-tabs {
+            display: flex;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            border: 1.5px solid var(--border);
+            margin-bottom: 24px;
+        }
+        .gate-tab {
+            flex: 1;
+            padding: 9px 0;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            background: var(--bg);
+            color: var(--text-muted);
+            border: none;
+            font-family: 'DM Sans', sans-serif;
+            transition: background 0.2s, color 0.2s;
+        }
+        .gate-tab.active {
+            background: var(--primary);
+            color: #fff;
+        }
+        .gate-panel { display: none; }
+        .gate-panel.active { display: block; }
+        .gate-input-wrap { position: relative; margin-bottom: 14px; }
+        .gate-input {
+            width: 100%;
+            padding: 11px 16px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background: var(--bg);
+        }
+        .gate-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+        .gate-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .gate-btn:hover { background: var(--primary-dark); }
+        .gate-error {
+            margin-top: 12px;
+            background: var(--danger-bg);
+            color: var(--danger);
+            border-radius: var(--radius-sm);
+            padding: 8px 14px;
+            font-size: 12px;
+            font-weight: 500;
+            display: none;
+        }
+        .gate-hint {
+            margin-top: 14px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        /* ── END ACCESS GATE ── */
+
+        header {
+            background: linear-gradient(135deg, #FF6633 0%, #EE4D2D 50%, #D02D11 100%);
+            color: white;
+            padding: 36px 40px 28px;
+            position: relative;
+            overflow: hidden;
+        }
+        header::before {
+            content: '';
+            position: absolute; top: -60px; right: -60px;
+            width: 280px; height: 280px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 50%;
+        }
+        .header-inner { max-width: 1280px; margin: 0 auto; position: relative; z-index: 1; }
+        header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 32px;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        header h1 .badge {
+            background: #000;
+            color: #fff;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+        .header-desc {
+            margin-top: 14px;
+            background: rgba(0,0,0,0.1);
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            line-height: 1.8;
+            max-width: 700px;
+            border-left: 3px solid #fff;
+        }
+        .last-update-tag {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            background: rgba(255,255,255,0.15);
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .container { max-width: 1280px; margin: 0 auto; padding: 28px 24px; }
+
+        .filter-section {
+            background: var(--card-bg);
+            padding: 20px 24px;
+            border-radius: var(--radius);
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        .filter-row + .filter-row { margin-top: 12px; }
+        .filter-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+        input[type="text"], input[type="number"], select {
+            padding: 9px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            color: var(--text);
+            background: var(--bg);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+        input[type="text"]:focus, input[type="number"]:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+        .switch-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg);
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            border: 1.5px solid var(--border);
+            cursor: pointer;
+        }
+        .count-badge {
+            margin-left: auto;
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            font-weight: 700;
+            font-size: 13px;
+            padding: 6px 14px;
+            border-radius: 20px;
+        }
+        .btn-clear {
+            padding: 9px 16px;
+            background: transparent;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-muted);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 1px solid var(--border);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-hover);
+            border-color: #ffd6cc;
+        }
+
+        .site-tag {
+            position: absolute; top: 10px; left: 10px;
+            background: var(--primary);
+            color: white;
+            font-size: 10px; font-weight: 700;
+            padding: 3px 8px; border-radius: 20px;
+            z-index: 10;
+        }
+
+        /* ── ggp-tag REMOVED from image overlay per requirement 3 ── */
+
+        .img-container {
+            width: 100%; height: 220px;
+            background: #fffafa;
+            overflow: hidden;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            cursor: zoom-in;
+        }
+        .img-container img {
+            max-width: 100%; max-height: 100%;
+            object-fit: contain;
+        }
+
+        .info { padding: 14px 16px; flex-grow: 1; display: flex; flex-direction: column; gap: 8px; }
+
+        .item-title {
+            font-weight: 600; font-size: 14px; line-height: 1.45; height: 40px;
+            overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+            color: var(--text);
+        }
+
+        /* ── REQ 1: Dual price ── */
+        .price-row { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+        .price-label { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+        .price-value { color: var(--primary); font-size: 18px; font-weight: 700; }
+        .price-local {
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .price-sep {
+            color: var(--border);
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        /* ── REQ 2: Shop name ── */
+        .shop-name-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .shop-name-row .shop-icon {
+            font-size: 11px;
+            font-weight: 700;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 1px 6px;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 180px;
+        }
+        .shop-name-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        /* ── REQ 3: Team row ── */
+        .team-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        .team-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+        .team-value {
+            font-weight: 600;
+            color: var(--accent2);
+            font-size: 11px;
+        }
+        .ggp-inline {
+            font-size: 10px;
+            color: var(--text-muted);
+            background: #f5f0ff;
+            border: 1px solid #d9d0fa;
+            border-radius: 4px;
+            padding: 1px 7px;
+            font-weight: 600;
+            color: var(--accent2);
+        }
+
+        .meta-row { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .pill { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; border: 1px solid transparent; }
+        .pill-cat { background: var(--tag-bg); color: var(--primary-dark); border-color: #f5c5d2; }
+        .pill-ado-pos { background: #f0fff4; color: #1a7a40; border-color: #b2dfca; }
+        .pill-ado-neg { background: var(--danger-bg); color: var(--danger); border-color: #facdcd; }
+
+        /* ── REQ 5: Tag system pills ── */
+        .pill-cb {
+            background: #fff8e1;
+            color: #b45309;
+            border-color: #fde68a;
+        }
+        .pill-local {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-color: #a5d6a7;
+        }
+        .pill-official {
+            background: #e3f2fd;
+            color: #1565c0;
+            border-color: #90caf9;
+        }
+
+        .stats-row { display: flex; gap: 8px; }
+        .stat-box {
+            flex: 1; background: var(--bg); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); padding: 8px 5px; text-align: center;
+        }
+        .stat-label { font-size: 10px; color: var(--text-muted); font-weight: 600; margin-bottom: 3px; }
+        .stat-value { font-size: 14px; font-weight: 700; }
+        .stat-value.sales-val { color: var(--success); }
+        .stat-value.revenue-val { color: var(--info); }
+
+        .footer-row {
+            display: flex; justify-content: space-between; align-items: center;
+            border-top: 1px solid var(--border); padding-top: 10px; margin-top: auto;
+            font-size: 11px; color: var(--text-muted);
+        }
+        .itemid-box {
+            font-family: monospace; background: var(--bg); padding: 2px 7px;
+            border-radius: 4px; border: 1px dashed #ddd; cursor: pointer;
+        }
+        .view-btn {
+            background: var(--info);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 10px;
+            margin-left: 4px;
+            transition: background 0.2s;
+        }
+        .view-btn:hover { background: var(--info-bg); color: var(--info); }
+
+        #imageModal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; cursor: zoom-out;
+        }
+        #imageModal img { max-width: 90vw; max-height: 90vh; border-radius: 8px; }
+
+        #toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px);
+            background: #333; color: white; padding: 10px 22px; border-radius: 30px;
+            font-size: 13px; opacity: 0; transition: all 0.3s; z-index: 10000;
+        }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        .pagination { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 32px 0; }
+        .pagination button { padding: 8px 16px; border: 1.5px solid var(--border); background: white; cursor: pointer; border-radius: var(--radius-sm); }
+
+        footer { text-align: center; color: var(--text-muted); font-size: 11px; padding: 40px; border-top: 1px solid var(--border); }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════
+     REQ 4 — ACCESS GATE (Email OR Password)
+     ═══════════════════════════════════════════════ -->
+<div id="accessGate">
+    <div class="gate-box">
+        <div class="gate-logo">Shopee Fashion</div>
+        <div class="gate-sub">Internal Only — Verify Access</div>
+
+        <div class="gate-tabs">
+            <button class="gate-tab active" onclick="switchGateTab('email')">Email Verification</button>
+            <button class="gate-tab" onclick="switchGateTab('password')">Password</button>
+        </div>
+
+        <!-- Email panel -->
+        <div class="gate-panel active" id="gateEmailPanel">
+            <div class="gate-input-wrap">
+                <input class="gate-input" type="email" id="gateEmailInput" placeholder="yourname@shopee.com" autocomplete="off">
+            </div>
+            <button class="gate-btn" onclick="verifyEmail()">Verify &amp; Enter</button>
+            <div class="gate-hint">Only @shopee.com email addresses are accepted.</div>
+        </div>
+
+        <!-- Password panel -->
+        <div class="gate-panel" id="gatePasswordPanel">
+            <div class="gate-input-wrap">
+                <input class="gate-input" type="password" id="gatePasswordInput" placeholder="Enter access password" autocomplete="off"
+                    onkeydown="if(event.key==='Enter') verifyPassword()">
+            </div>
+            <button class="gate-btn" onclick="verifyPassword()">Verify &amp; Enter</button>
+        </div>
+
+        <div class="gate-error" id="gateError"></div>
+    </div>
+</div>
+<!-- ═══════════════════════════════════════════════ -->
+
+<header>
+    <div class="header-inner">
+        <h1>Shopee Fashion Female Apparel Selection <span class="badge">Internal Only</span></h1>
+        <div class="header-desc">
+            <strong>Top Sellers &amp; High-Potential New SKUs</strong> — Multi-site coverage for fast trending SKU identification<br>
+            Daily sales, daily revenue, and prices are real unmasked data. <strong>Daily revenue is unified in RMB (CNY)</strong><br>
+            This page is for internal selection use only.
+        </div>
+        <div class="last-update-tag" id="lastUpdateDisplay">Updating data...</div>
+    </div>
+</header>
+
+<div class="container">
+    <div class="filter-section">
+        <div class="filter-row">
+            <span class="filter-label">Search</span>
+            <input type="text" id="searchInput" placeholder="Title / ID / GGP / Shop..." oninput="debouncedFilter()">
+
+            <select id="l1Filter" onchange="updateL2(); applyFilters()">
+                <option value="">L1 Category</option>
+            </select>
+            <select id="l2Filter" onchange="updateL3(); applyFilters()">
+                <option value="">L2 Category</option>
+            </select>
+            <select id="l3Filter" onchange="applyFilters()">
+                <option value="">L3 Category</option>
+            </select>
+
+            <span class="filter-label">Price</span>
+            <input type="number" id="minPrice" placeholder="Min" oninput="debouncedFilter()" style="width:70px;">
+            <input type="number" id="maxPrice" placeholder="Max" oninput="debouncedFilter()" style="width:70px;">
+
+            <select id="sortOrder" onchange="applyFilters()">
+                <option value="dateDesc">Date Desc</option>
+                <option value="priceDesc">Price Desc</option>
+                <option value="salesDesc">Daily Sales Desc</option>
+                <option value="revDesc">Daily Revenue Desc</option>
+            </select>
+
+            <button class="btn-clear" onclick="clearFilters()">x Reset</button>
+            <span class="count-badge" id="countDisplay">—</span>
+        </div>
+
+        <div class="filter-row">
+            <span class="filter-label">Site</span>
+            <select id="siteFilter" onchange="applyFilters()">
+                <option value="">All Sites</option>
+                <option value="BR">BR</option>
+                <option value="MX">MX</option>
+                <option value="MY">MY</option>
+                <option value="PH">PH</option>
+                <option value="SG">SG</option>
+                <option value="TH">TH</option>
+                <option value="TW">TW</option>
+                <option value="VN">VN</option>
+            </select>
+            <span class="filter-label">Seller Type</span>
+            <select id="sellerTypeFilter" onchange="applyFilters()">
+                <option value="">All Types</option>
+                <option value="CNCB">CNCB</option>
+                <option value="Local">Local</option>
+            </select>
+
+            <!-- REQ 5: Tag filter -->
+            <span class="filter-label">Tag</span>
+            <select id="tagTypeFilter" onchange="applyFilters()">
+                <option value="">All Tags</option>
+                <option value="CB">CB</option>
+                <option value="Local">Local</option>
+                <option value="Official">Official</option>
+            </select>
+
+            <!-- REQ 3: Team filter -->
+            <span class="filter-label">Team</span>
+            <select id="teamFilter" onchange="applyFilters()">
+                <option value="">All Teams</option>
+            </select>
+
+            <label class="switch-container">
+                <input type="checkbox" id="topNewFilter" onchange="applyFilters()">
+                <span style="font-size: 13px; font-weight: 500;">Top New SKU</span>
+            </label>
+        </div>
+    </div>
+
+    <div class="product-grid" id="productGrid"></div>
+    <div class="pagination" id="pagination"></div>
+</div>
+
+<div id="imageModal" onclick="this.style.display='none'"><img id="modalImg" src=""></div>
+<div id="toast"></div>
+
+<footer>Shopee Fashion Internal Selection System - CONFIDENTIAL</footer>
+
+<script>
+    // ═══════════════════════════════════════════════
+    // ACCESS GATE LOGIC (REQ 4)
+    // ═══════════════════════════════════════════════
+
+    // --- CONFIGURE PASSWORD HERE ---
+    const ACCESS_PASSWORD = 'shopee2024';
+    // --------------------------------
+
+    function switchGateTab(tab) {
+        document.querySelectorAll('.gate-tab').forEach((t, i) => {
+            t.classList.toggle('active', (i === 0 && tab === 'email') || (i === 1 && tab === 'password'));
+        });
+        document.getElementById('gateEmailPanel').classList.toggle('active', tab === 'email');
+        document.getElementById('gatePasswordPanel').classList.toggle('active', tab === 'password');
+        document.getElementById('gateError').style.display = 'none';
+    }
+
+    function showGateError(msg) {
+        const el = document.getElementById('gateError');
+        el.textContent = msg;
+        el.style.display = 'block';
+    }
+
+    function dismissGate() {
+        const gate = document.getElementById('accessGate');
+        gate.style.transition = 'opacity 0.4s ease';
+        gate.style.opacity = '0';
+        setTimeout(() => { gate.style.display = 'none'; }, 420);
+    }
+
+    function verifyEmail() {
+        const val = document.getElementById('gateEmailInput').value.trim().toLowerCase();
+        if (!val) { showGateError('Please enter your email address.'); return; }
+        if (!/^[a-z0-9._%+\-]+@shopee\.com$/i.test(val)) {
+            showGateError('Access denied. Only @shopee.com emails are allowed.');
+            return;
+        }
+        dismissGate();
+    }
+
+    function verifyPassword() {
+        const val = document.getElementById('gatePasswordInput').value;
+        if (!val) { showGateError('Please enter the access password.'); return; }
+        if (val !== ACCESS_PASSWORD) {
+            showGateError('Incorrect password. Please try again.');
+            return;
+        }
+        dismissGate();
+    }
+
+    // ═══════════════════════════════════════════════
+    // LOCAL CURRENCY SYMBOL MAP (REQ 1)
+    // ═══════════════════════════════════════════════
+    const localCurrencySymbol = {
+        BR: 'R$', MX: 'MX$', MY: 'RM', PH: '\u20B1',
+        SG: 'S$', TH: '\u0E3F', TW: 'NT$', VN: '\u20AB'
+    };
+
+    // ═══════════════════════════════════════════════
+    // CORE DATA
+    // ═══════════════════════════════════════════════
+    let products = [], filteredData = [], currentPage = 1;
+    const pageSize = 40;
+    const siteFlag = { BR:'BR', MX:'MX', MY:'MY', PH:'PH', SG:'SG', TH:'TH', TW:'TW', VN:'VN' };
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg; t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2000);
+    }
+
+    const clean = (s) => (s || "").toString().replace(/^[="]+|["]+$/g, '').trim();
+    const toNum = (s) => { const value = clean(s).replace(/,/g, ''); return parseFloat(value) || 0; };
+
+    /**
+     * CSV COLUMN MAPPING (20 fields):
+     * A:0  title
+     * B:1  price          (RMB price)
+     * C:2  imgUrl
+     * D:3  link
+     * E:4  l1
+     * F:5  l2
+     * G:6  update_date
+     * H:7  itemid
+     * I:8  tag
+     * J:9  site
+     * K:10 seller_type
+     * L:11 daily_sales
+     * M:12 daily_revenue
+     * N:13 ado_mom
+     * O:14 is_official
+     * P:15 l3
+     * Q:16 ggp_name
+     * R:17 local_price    (NEW - local currency price)
+     * S:18 shop_name      (NEW - REQ 2)
+     * T:19 team           (NEW - REQ 3)
+     * U:20 product_tag    (NEW - REQ 5: "CB" | "Local" | "Official")
+     */
+    const mapData = (arr) => {
+        return {
+            title:         clean(arr[0]),
+            price:         toNum(arr[1]),
+            imgUrl:        clean(arr[2]),
+            link:          clean(arr[3]),
+            l1:            clean(arr[4]),
+            l2:            clean(arr[5]),
+            update_date:   clean(arr[6]),
+            itemid:        clean(arr[7]),
+            tag:           clean(arr[8]),
+            site:          clean(arr[9]),
+            seller_type:   clean(arr[10]),
+            daily_sales:   toNum(arr[11]),
+            daily_revenue: toNum(arr[12]),
+            ado_mom:       clean(arr[13]),
+            is_official:   clean(arr[14]),
+            l3:            clean(arr[15]),
+            ggp_name:      clean(arr[16]),
+            local_price:   toNum(arr[17]),   // R — local currency price (REQ 1)
+            shop_name:     clean(arr[18]),   // S — shop name (REQ 2)
+            team:          clean(arr[19]),   // T — team (REQ 3)
+            product_tag:   clean(arr[20])    // U — CB / Local / Official (REQ 5)
+        };
+    };
+
+    async function loadData() {
+        try {
+            const res = await fetch('data.csv');
+            const text = await res.text();
+            const rows = text.split(/\r?\n/).filter(l => l.trim());
+            products = rows.slice(1).map(line => {
+                let r = [], cur = '', q = false;
+                for (let c of line) {
+                    if (c === '"') q = !q;
+                    else if (c === ',' && !q) { r.push(cur.trim()); cur = ''; }
+                    else cur += c;
+                }
+                r.push(cur.trim());
+                return r;
+            }).filter(a => a[0]);
+
+            const dates = products.map(p => new Date(clean(p[6]))).filter(d => !isNaN(d));
+            if (dates.length > 0) {
+                const latest = new Date(Math.max(...dates));
+                document.getElementById('lastUpdateDisplay').textContent = `Data updated: ${latest.toLocaleDateString()}`;
+            }
+
+            initFilters();
+            applyFilters();
+        } catch (e) {
+            document.getElementById('productGrid').innerHTML =
+                `<div style="grid-column:1/-1;text-align:center;padding:50px;">CSV load failed</div>`;
+        }
+    }
+
+    function initFilters() {
+        // L1
+        const l1s = [...new Set(products.map(p => clean(p[4])))].filter(Boolean);
+        const l1Filter = document.getElementById('l1Filter');
+        l1Filter.innerHTML = '<option value="">L1 Category</option>';
+        l1s.sort().forEach(v => l1Filter.innerHTML += `<option value="${v}">${v}</option>`);
+
+        // Team filter (REQ 3)
+        const teams = [...new Set(products.map(p => clean(p[19])))].filter(Boolean);
+        const teamFilter = document.getElementById('teamFilter');
+        teamFilter.innerHTML = '<option value="">All Teams</option>';
+        teams.sort().forEach(v => teamFilter.innerHTML += `<option value="${v}">${v}</option>`);
+
+        updateL2();
+    }
+
+    function updateL2() {
+        const l1 = document.getElementById('l1Filter').value;
+        const s = document.getElementById('l2Filter');
+        s.innerHTML = '<option value="">L2 Category</option>';
+        const filteredL2 = [...new Set(products.filter(p => !l1 || clean(p[4]) === l1).map(p => clean(p[5])))].filter(Boolean);
+        filteredL2.sort().forEach(v => { s.innerHTML += `<option value="${v}">${v}</option>`; });
+        updateL3();
+    }
+
+    function updateL3() {
+        const l1 = document.getElementById('l1Filter').value;
+        const l2 = document.getElementById('l2Filter').value;
+        const s = document.getElementById('l3Filter');
+        s.innerHTML = '<option value="">L3 Category</option>';
+        const filteredL3 = [...new Set(products.filter(p =>
+            (!l1 || clean(p[4]) === l1) && (!l2 || clean(p[5]) === l2)
+        ).map(p => clean(p[15])))].filter(Boolean);
+        filteredL3.sort().forEach(v => { s.innerHTML += `<option value="${v}">${v}</option>`; });
+    }
+
+    // Build product tag badge HTML (REQ 5 — NOT on image)
+    function buildProductTagBadge(product_tag) {
+        if (!product_tag) return '';
+        const tags = product_tag.split(/[,;|]/).map(t => t.trim()).filter(Boolean);
+        return tags.map(t => {
+            const tl = t.toLowerCase();
+            if (tl === 'cb')       return `<span class="pill pill-cb">CB</span>`;
+            if (tl === 'local')    return `<span class="pill pill-local">Local</span>`;
+            if (tl === 'official') return `<span class="pill pill-official">Official</span>`;
+            return `<span class="pill pill-cat">${t}</span>`;
+        }).join('');
+    }
+
+    function render(dataList, page = 1) {
+        currentPage = page;
+        const grid = document.getElementById('productGrid');
+        grid.innerHTML = '';
+        const pageData = dataList.slice((page - 1) * pageSize, page * pageSize);
+
+        pageData.forEach(arr => {
+            const item = mapData(arr);
+            const flag = siteFlag[item.site] || item.site || 'N/A';
+            const isNeg = item.ado_mom.includes('-');
+
+            // REQ 1: Dual price display
+            const currSymbol = localCurrencySymbol[item.site] || '';
+            const localPriceHTML = (item.local_price > 0 && currSymbol)
+                ? `<span class="price-sep">/</span><span class="price-local">${currSymbol}${item.local_price.toLocaleString()}</span>`
+                : '';
+
+            // REQ 5: Product tag badges (NOT on image)
+            const tagBadges = buildProductTagBadge(item.product_tag);
+
+            // REQ 2: Shop name display (NOT on image)
+            const shopNameHTML = item.shop_name
+                ? `<div class="shop-name-row">
+                       <span class="shop-name-label">Shop</span>
+                       <span class="shop-icon" title="${item.shop_name}">${item.shop_name}</span>
+                   </div>`
+                : '';
+
+            // REQ 3: Team + GGP inline (GGP NOT on image overlay)
+            const teamHTML = (item.team || item.ggp_name)
+                ? `<div class="team-row">
+                       ${item.team ? `<span class="team-label">Team</span><span class="team-value">${item.team}</span>` : ''}
+                       ${item.ggp_name ? `<span class="ggp-inline">GGP: ${item.ggp_name}</span>` : ''}
+                   </div>`
+                : '';
+
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <div class="site-tag">${flag} ${item.site}</div>
+                <div class="img-container" onclick="openModal('${item.imgUrl.replace(/'/g, "\\'")}')">
+                    <img src="${item.imgUrl}" loading="lazy" onerror="this.src='https://via.placeholder.com/200?text=No+Image'">
+                </div>
+                <div class="info">
+                    <div class="item-title" title="${item.title}">${item.title}</div>
+
+                    ${shopNameHTML}
+
+                    <div class="price-row">
+                        <span class="price-label">Price</span>
+                        <span class="price-value">&#xA5;${item.price.toLocaleString()}</span>
+                        ${localPriceHTML}
+                    </div>
+
+                    <div class="meta-row">
+                        ${item.l3 ? `<span class="pill pill-cat">${item.l3}</span>` : (item.l2 ? `<span class="pill pill-cat">${item.l2}</span>` : '')}
+                        ${item.ado_mom ? `<span class="pill ${isNeg ? 'pill-ado-neg' : 'pill-ado-pos'}">${isNeg ? 'v' : '^'} ${item.ado_mom}</span>` : ''}
+                        ${tagBadges}
+                    </div>
+
+                    ${teamHTML}
+
+                    <div class="stats-row">
+                        <div class="stat-box">
+                            <div class="stat-label">Daily Sales</div>
+                            <div class="stat-value sales-val">${item.daily_sales.toLocaleString()}</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Daily Revenue</div>
+                            <div class="stat-value revenue-val">&#xA5;${item.daily_revenue.toLocaleString()}</div>
+                        </div>
+                    </div>
+                    <div class="footer-row">
+                        <span>${item.update_date}</span>
+                        <div>
+                            <span class="itemid-box" onclick="copyId('${item.itemid}')">ID: ${item.itemid}</span>
+                            <a href="${item.link}" target="_blank" class="view-btn">View</a>
+                        </div>
+                    </div>
+                </div>`;
+            grid.appendChild(card);
+        });
+        renderPagination(dataList.length);
+    }
+
+    function openModal(src) {
+        document.getElementById('modalImg').src = src;
+        document.getElementById('imageModal').style.display = 'flex';
+    }
+    function copyId(id) { navigator.clipboard.writeText(id).then(() => showToast(`Copied ID: ${id}`)); }
+
+    function renderPagination(total) {
+        const totalPages = Math.ceil(total / pageSize) || 1;
+        document.getElementById('pagination').innerHTML = `
+            <button onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''}>&larr;</button>
+            <span>${currentPage} / ${totalPages}</span>
+            <button onclick="changePage(1)" ${currentPage >= totalPages ? 'disabled' : ''}>&rarr;</button>
+        `;
+    }
+
+    function changePage(d) { render(filteredData, currentPage + d); window.scrollTo(0, 0); }
+
+    function applyFilters() {
+        const q        = document.getElementById('searchInput').value.toLowerCase();
+        const l1       = document.getElementById('l1Filter').value;
+        const l2       = document.getElementById('l2Filter').value;
+        const l3       = document.getElementById('l3Filter').value;
+        const site     = document.getElementById('siteFilter').value;
+        const seller   = document.getElementById('sellerTypeFilter').value;
+        const isTopNew = document.getElementById('topNewFilter').checked;
+        const minP     = parseFloat(document.getElementById('minPrice').value) || 0;
+        const maxP     = parseFloat(document.getElementById('maxPrice').value) || Infinity;
+        const tagType  = document.getElementById('tagTypeFilter').value;  // REQ 5
+        const team     = document.getElementById('teamFilter').value;     // REQ 3
+
+        filteredData = products.filter(arr => {
+            const i = mapData(arr);
+            const matchTopNew = !isTopNew || (i.tag && i.tag.toLowerCase().includes("new"));
+            // REQ 5: tag filter — check if product_tag contains the selected tag
+            const matchTag = !tagType || (i.product_tag && i.product_tag.toLowerCase().split(/[,;|]/).map(t => t.trim()).includes(tagType.toLowerCase()));
+            // REQ 3: team filter
+            const matchTeam = !team || i.team === team;
+
+            return (
+                (!q || i.title.toLowerCase().includes(q) || i.itemid.includes(q) ||
+                 i.ggp_name.toLowerCase().includes(q) || i.shop_name.toLowerCase().includes(q)) &&
+                (!l1 || i.l1 === l1) && (!l2 || i.l2 === l2) && (!l3 || i.l3 === l3) &&
+                (!site || i.site === site) && (!seller || i.seller_type === seller) &&
+                matchTopNew && matchTag && matchTeam &&
+                (i.price >= minP && i.price <= maxP)
+            );
+        });
+
+        const sort = document.getElementById('sortOrder').value;
+        if (sort === 'dateDesc')  filteredData.sort((a, b) => new Date(clean(b[6])) - new Date(clean(a[6])));
+        else if (sort === 'priceDesc') filteredData.sort((a, b) => toNum(b[1]) - toNum(a[1]));
+        else if (sort === 'salesDesc') filteredData.sort((a, b) => toNum(b[11]) - toNum(a[11]));
+        else if (sort === 'revDesc')   filteredData.sort((a, b) => toNum(b[12]) - toNum(a[12]));
+
+        document.getElementById('countDisplay').textContent = `Total: ${filteredData.length}`;
+        render(filteredData, 1);
+    }
+
+    function clearFilters() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('l1Filter').value = '';
+        document.getElementById('minPrice').value = '';
+        document.getElementById('maxPrice').value = '';
+        document.getElementById('siteFilter').value = '';
+        document.getElementById('sellerTypeFilter').value = '';
+        document.getElementById('topNewFilter').checked = false;
+        document.getElementById('sortOrder').value = 'dateDesc';
+        document.getElementById('tagTypeFilter').value = '';   // REQ 5
+        document.getElementById('teamFilter').value = '';     // REQ 3
+        updateL2(); applyFilters();
+    }
+
+    let timer;
+    const debouncedFilter = () => { clearTimeout(timer); timer = setTimeout(applyFilters, 300); };
+
+    window.onload = loadData;
+</script>
+</body>
+</html>
